@@ -237,6 +237,10 @@ components:
           minimum: 0
           example: 175.25
           description: "Optional. For CASH/OTHER types, set manually. For STOCK/CRYPTO/ETF, auto-fetched."
+        broker:
+          type: string
+          maxLength: 80
+          example: "Interactive Brokers"
         notes:
           type: string
           maxLength: 500
@@ -278,6 +282,8 @@ components:
           type: number
           format: double
           description: "Calculated: (profitAndLoss / totalInvested) * 100"
+        broker:
+          type: string
         notes:
           type: string
         createdAt:

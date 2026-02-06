@@ -34,6 +34,7 @@ const initialForm: FormState = {
   quantity: '',
   averagePurchasePrice: '',
   currentPrice: '',
+  broker: '',
   notes: '',
 };
 
@@ -54,6 +55,7 @@ export default function AddInvestmentForm({ onSubmit, onCancel, editingInvestmen
         quantity: numberToString(editingInvestment.quantity),
         averagePurchasePrice: numberToString(editingInvestment.averagePurchasePrice),
         currentPrice: numberToString(editingInvestment.currentPrice),
+        broker: editingInvestment.broker || '',
         notes: editingInvestment.notes || '',
       });
     } else {
@@ -83,6 +85,7 @@ export default function AddInvestmentForm({ onSubmit, onCancel, editingInvestmen
         name: form.name,
         ticker: form.ticker,
         type: form.type,
+        broker: form.broker?.trim() || undefined,
         notes: form.notes,
         quantity: Number.isNaN(quantityNum) ? 0 : quantityNum,
         averagePurchasePrice: Number.isNaN(averagePurchasePriceNum) ? 0 : averagePurchasePriceNum,
@@ -164,6 +167,20 @@ export default function AddInvestmentForm({ onSubmit, onCancel, editingInvestmen
                 <option key={t.value} value={t.value}>{t.label}</option>
               ))}
             </select>
+          </div>
+
+          {/* Broker */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Broker</label>
+            <input
+              type="text"
+              name="broker"
+              value={form.broker}
+              onChange={handleChange}
+              placeholder="e.g. Interactive Brokers"
+              maxLength={80}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            />
           </div>
 
           {/* Quantity */}

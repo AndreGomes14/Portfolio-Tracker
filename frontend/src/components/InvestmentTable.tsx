@@ -147,6 +147,7 @@ export default function InvestmentTable({ investments, loading, onDelete, onEdit
               <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Ticker</th>
               <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Type</th>
+              <th className="text-left px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Broker</th>
               <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
               <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Avg Price</th>
               <th className="text-right px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Current Price</th>
@@ -191,6 +192,7 @@ export default function InvestmentTable({ investments, loading, onDelete, onEdit
                         {group.type}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{group.investments[0]?.broker || '—'}</td>
                     <td className="px-6 py-4 text-right font-mono text-sm font-semibold">{group.totalQuantity}</td>
                     <td className="px-6 py-4 text-right font-mono text-sm">{formatCurrency(group.weightedAvgPrice)}</td>
                     <td className="px-6 py-4 text-right font-mono text-sm">{formatCurrency(group.currentPrice)}</td>
@@ -259,6 +261,7 @@ export default function InvestmentTable({ investments, loading, onDelete, onEdit
                         <td className="px-6 py-3">
                           <span className="text-xs text-gray-500">{inv.type}</span>
                         </td>
+                        <td className="px-6 py-3 text-sm text-gray-600">{inv.broker || '—'}</td>
                         <td className="px-6 py-3 text-right font-mono text-sm">{inv.quantity}</td>
                         <td className="px-6 py-3 text-right font-mono text-sm">{formatCurrency(inv.averagePurchasePrice)}</td>
                         <td className="px-6 py-3 text-right font-mono text-sm">{formatCurrency(inv.currentPrice)}</td>

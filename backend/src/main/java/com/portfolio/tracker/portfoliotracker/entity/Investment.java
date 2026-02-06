@@ -40,6 +40,9 @@ public class Investment {
     @Builder.Default
     private Double currentPrice = 0.0;
 
+    @Column(length = 80)
+    private String broker;
+
     @Column(length = 500)
     private String notes;
 
@@ -51,12 +54,4 @@ public class Investment {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    /**
-     * Check if this investment type supports auto price updates.
-     */
-    public boolean isAutoUpdatable() {
-        return type == InvestmentType.STOCK
-                || type == InvestmentType.CRYPTO
-                || type == InvestmentType.ETF;
-    }
 }
