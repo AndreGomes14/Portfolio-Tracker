@@ -2,6 +2,12 @@
 
 We use **feature branches** that merge into **develop**.
 
+## Steps completed (current history)
+
+1. **feature/db-schema** → merged to develop (database schema)
+2. **feature/backend-implementation** → merged to develop (controllers, services, entities, API)
+3. **feature/frontend-implementation** → merged to develop (dashboard, summary cards, investment table/form, README, this doc)
+
 ## Branch naming
 
 - **Feature branches:** `feature/<short-description>`
