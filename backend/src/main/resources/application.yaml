@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: PortfolioTracker
+
+  # PostgreSQL Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/portfolio_tracker
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Jackson 3 (Spring Boot 4): dates serialize as ISO-8601 by default; no write-dates-as-timestamps
+
+# Server
+server:
+  port: 8080
+
+# Springdoc OpenAPI / Swagger UI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# Portfolio Tracker Config
+portfolio:
+  snapshot:
+    cron: "0 0 0 * * *"  # Daily at midnight
+
+# Logging
+logging:
+  level:
+    com.portfolio.tracker: DEBUG
+    org.springframework.web: INFO
