@@ -40,6 +40,7 @@ CREATE INDEX idx_investments_type ON investments(type);
 CREATE TABLE portfolio_snapshots (
     id                      BIGSERIAL       PRIMARY KEY,
     snapshot_date           TIMESTAMP       NOT NULL,
+    total_portfolio_value   DOUBLE PRECISION NOT NULL DEFAULT 0,
     total_invested_amount   DOUBLE PRECISION NOT NULL DEFAULT 0,
     total_current_value     DOUBLE PRECISION NOT NULL DEFAULT 0,
     total_profit_and_loss   DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -48,9 +49,6 @@ CREATE TABLE portfolio_snapshots (
 
 -- Index for date-based queries (history lookups)
 CREATE INDEX idx_snapshots_date ON portfolio_snapshots(snapshot_date DESC);
-
--- Unique constraint: one snapshot per day
-CREATE UNIQUE INDEX idx_snapshots_unique_date ON portfolio_snapshots(DATE(snapshot_date));
 
 -- For existing DBs (if you added broker later), run:
 -- ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker VARCHAR(80);

@@ -331,12 +331,18 @@ components:
         snapshotDate:
           type: string
           format: date-time
+        totalPortfolioValue:
+          type: number
+          format: double
+          description: Sum of current value of ALL investments (incl. cash)
         totalInvestedAmount:
           type: number
           format: double
+          description: Sum of amount invested in STOCK, CRYPTO, ETF only
         totalCurrentValue:
           type: number
           format: double
+          description: Sum of current value of STOCK, CRYPTO, ETF only (for return %)
         totalProfitAndLoss:
           type: number
           format: double

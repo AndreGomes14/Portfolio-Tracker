@@ -12,14 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * Service responsible for taking daily portfolio snapshots.
- * The scheduled job runs once daily to:
- * 1. Refresh all asset prices via PriceService.
- * 2. Calculate global portfolio totals.
- * 3. Save a PortfolioSnapshot record.
+ * Service responsible for taking portfolio snapshots.
+ * Scheduled job runs every hour. Manual trigger replaces any snapshot in the current hour.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,14 +30,22 @@ public class SnapshotService {
     private final PortfolioSnapshotMapper snapshotMapper;
 
     /**
-     * Daily scheduled job - runs at midnight every day.
+     * Hourly scheduled job - runs at minute 0 of every hour while the app is running.
      * Cron: second minute hour day-of-month month day-of-week
      */
-    @Scheduled(cron = "${portfolio.snapshot.cron:0 0 0 * * *}")
+    @Scheduled(cron = "${portfolio.snapshot.cron:0 0 * * * *}")
     @Transactional
-    public void takeDailySnapshot() {
-        log.info("Starting daily portfolio snapshot job...");
+    public void takeScheduledSnapshot() {
+        log.info("Starting scheduled hourly portfolio snapshot...");
+        takeSnapshot();
+    }
 
+    /**
+     * Take a snapshot now. If a snapshot already exists for the current hour, it is replaced.
+     * Used by both the scheduler and the manual "Take snapshot" API.
+     */
+    @Transactional
+    public void takeSnapshot() {
         try {
             // Step 1: Refresh all asset prices
             priceService.refreshAllPrices();
@@ -47,21 +53,34 @@ public class SnapshotService {
             // Step 2: Calculate portfolio totals
             PortfolioSummaryResponse summary = investmentService.getPortfolioSummary();
 
-            // Step 3: Save snapshot
+            // Step 3: Replace any snapshot in the current hour
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime hourStart = now.truncatedTo(ChronoUnit.HOURS);
+            LocalDateTime hourEnd = hourStart.plusHours(1);
+            List<PortfolioSnapshot> existingInHour = snapshotRepository
+                    .findBySnapshotDateGreaterThanEqualAndSnapshotDateLessThan(hourStart, hourEnd);
+            if (!existingInHour.isEmpty()) {
+                snapshotRepository.deleteAll(existingInHour);
+                log.debug("Replaced {} snapshot(s) in current hour", existingInHour.size());
+            }
+
+            // Step 4: Save new snapshot with all three values
             PortfolioSnapshot snapshot = PortfolioSnapshot.builder()
-                    .snapshotDate(LocalDateTime.now())
+                    .snapshotDate(now)
+                    .totalPortfolioValue(summary.getTotalPortfolioValue())
                     .totalInvestedAmount(summary.getTotalInvestedAmount())
                     .totalCurrentValue(summary.getTotalCurrentValue())
                     .totalProfitAndLoss(summary.getTotalProfitAndLoss())
                     .build();
-
             snapshotRepository.save(snapshot);
-            log.info("Daily snapshot saved. Invested: ${}, Value: ${}, P&L: ${}",
-                    summary.getTotalInvestedAmount(),
+            log.info("Snapshot saved. Portfolio value (all): {}, Current value (excl. cash): {}, Invested: {}, P&L: {}",
+                    summary.getTotalPortfolioValue(),
                     summary.getTotalCurrentValue(),
+                    summary.getTotalInvestedAmount(),
                     summary.getTotalProfitAndLoss());
         } catch (Exception e) {
-            log.error("Failed to take daily snapshot: {}", e.getMessage(), e);
+            log.error("Failed to take snapshot: {}", e.getMessage(), e);
+            throw e;
         }
     }
 
@@ -73,6 +92,25 @@ public class SnapshotService {
         LocalDateTime since = LocalDateTime.now().minusDays(days);
         List<PortfolioSnapshot> snapshots = snapshotRepository
                 .findBySnapshotDateAfterOrderBySnapshotDateAsc(since);
+        return snapshotMapper.toResponseList(snapshots);
+    }
+    
+    /**
+     * Retrieve portfolio history between two dates.
+     */
+    @Transactional(readOnly = true)
+    public List<PortfolioHistoryResponse> getHistoryByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        List<PortfolioSnapshot> snapshots = snapshotRepository
+                .findBySnapshotDateBetweenOrderBySnapshotDateAsc(startDate, endDate);
+        return snapshotMapper.toResponseList(snapshots);
+    }
+    
+    /**
+     * Retrieve all portfolio history.
+     */
+    @Transactional(readOnly = true)
+    public List<PortfolioHistoryResponse> getAllHistory() {
+        List<PortfolioSnapshot> snapshots = snapshotRepository.findAllByOrderBySnapshotDateAsc();
         return snapshotMapper.toResponseList(snapshots);
     }
 }

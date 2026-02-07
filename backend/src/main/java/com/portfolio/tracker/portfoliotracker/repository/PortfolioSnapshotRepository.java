@@ -11,4 +11,12 @@ import java.util.List;
 public interface PortfolioSnapshotRepository extends JpaRepository<PortfolioSnapshot, Long> {
 
     List<PortfolioSnapshot> findBySnapshotDateAfterOrderBySnapshotDateAsc(LocalDateTime date);
+    
+    List<PortfolioSnapshot> findBySnapshotDateBetweenOrderBySnapshotDateAsc(LocalDateTime startDate, LocalDateTime endDate);
+    
+    List<PortfolioSnapshot> findAllByOrderBySnapshotDateAsc();
+    
+    /** Snapshots within the same hour (startInclusive <= snapshot_date < endExclusive) */
+    List<PortfolioSnapshot> findBySnapshotDateGreaterThanEqualAndSnapshotDateLessThan(
+            LocalDateTime startInclusive, LocalDateTime endExclusive);
 }
