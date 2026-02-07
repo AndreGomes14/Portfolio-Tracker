@@ -23,16 +23,20 @@ public interface InvestmentMapper {
 
     /**
      * Map request DTO to entity (for creation).
+     * Owner is set by the service layer after mapping.
      */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Investment toEntity(InvestmentRequest request);
 
     /**
      * Update existing entity from request DTO.
+     * Owner cannot be changed via update.
      */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromRequest(InvestmentRequest request, @MappingTarget Investment investment);

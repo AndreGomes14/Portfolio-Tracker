@@ -2,6 +2,7 @@ package com.portfolio.tracker.portfoliotracker.service;
 
 import com.portfolio.tracker.portfoliotracker.entity.Investment;
 import com.portfolio.tracker.portfoliotracker.entity.InvestmentType;
+import com.portfolio.tracker.portfoliotracker.entity.User;
 import com.portfolio.tracker.portfoliotracker.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,14 +34,14 @@ public class PriceService {
      * Refresh prices for all auto-updatable investments (STOCK, CRYPTO, ETF).
      * Returns the list of updated investments.
      */
-    public List<Investment> refreshAllPrices() {
+    public void refreshAllPrices() {
         List<Investment> autoUpdatable = investmentRepository.findByTypeIn(
                 List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
         );
 
         if (autoUpdatable.isEmpty()) {
             log.info("No auto-updatable investments found.");
-            return List.of();
+            return;
         }
 
         // Fetch exchange rate for USD to EUR conversion
@@ -63,6 +64,36 @@ public class PriceService {
 
         investmentRepository.saveAll(autoUpdatable);
         log.info("Refreshed prices for {} investments.", autoUpdatable.size());
+    }
+
+    /**
+     * Refresh prices only for a specific user's investments (STOCK, CRYPTO, ETF).
+     * Used by the manual "Refresh Prices" button scoped to the authenticated user.
+     */
+    public List<Investment> refreshPricesForUser(User owner) {
+        List<Investment> autoUpdatable = investmentRepository.findByOwnerAndTypeIn(
+                owner, List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
+        );
+
+        if (autoUpdatable.isEmpty()) {
+            log.info("No auto-updatable investments found for user {}.", owner.getEmail());
+            return List.of();
+        }
+
+        fetchUsdToEurRate();
+
+        List<Investment> cryptos = autoUpdatable.stream()
+                .filter(i -> i.getType() == InvestmentType.CRYPTO)
+                .toList();
+        List<Investment> stocksAndEtfs = autoUpdatable.stream()
+                .filter(i -> i.getType() != InvestmentType.CRYPTO)
+                .toList();
+
+        if (!cryptos.isEmpty()) refreshCryptoPrices(cryptos);
+        if (!stocksAndEtfs.isEmpty()) refreshStockPrices(stocksAndEtfs);
+
+        investmentRepository.saveAll(autoUpdatable);
+        log.info("Refreshed prices for {} investments (user: {}).", autoUpdatable.size(), owner.getEmail());
         return autoUpdatable;
     }
 
@@ -131,7 +162,7 @@ public class PriceService {
                     String tickerLower = crypto.getTicker() != null ? crypto.getTicker().toLowerCase() : "";
                     Map<String, Object> priceData = response.get(tickerLower);
                     if (priceData != null && priceData.get("usd") != null) {
-                        Double priceUsd = ((Number) priceData.get("usd")).doubleValue();
+                        double priceUsd = ((Number) priceData.get("usd")).doubleValue();
                         
                         // Convert USD to EUR
                         Double priceEur = priceUsd * (usdToEurRate != null ? usdToEurRate : 0.92);
