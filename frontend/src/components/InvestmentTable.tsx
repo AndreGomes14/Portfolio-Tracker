@@ -97,8 +97,13 @@ function groupInvestments(investments: InvestmentResponse[]): GroupedInvestment[
   return result;
 }
 
+type SortOption = 'name' | 'pnl-desc' | 'pnl-asc' | 'pnl-percent-desc' | 'pnl-percent-asc' | 'value-desc' | 'value-asc';
+
 export default function InvestmentTable({ investments, loading, onDelete, onEdit }: Props) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<SortOption>('name');
+  const [filterType, setFilterType] = useState<string>('ALL');
+  const [filterBroker, setFilterBroker] = useState<string>('ALL');
 
   if (loading) {
     return (
@@ -123,7 +128,39 @@ export default function InvestmentTable({ investments, loading, onDelete, onEdit
     );
   }
 
-  const groupedInvestments = groupInvestments(investments);
+  // Get unique types and brokers for filters
+  const uniqueTypes = Array.from(new Set(investments.map(inv => inv.type)));
+  const uniqueBrokers = Array.from(new Set(investments.map(inv => inv.broker).filter(Boolean))) as string[];
+
+  // Filter investments
+  let filteredInvestments = investments;
+  if (filterType !== 'ALL') {
+    filteredInvestments = filteredInvestments.filter(inv => inv.type === filterType);
+  }
+  if (filterBroker !== 'ALL') {
+    filteredInvestments = filteredInvestments.filter(inv => inv.broker === filterBroker);
+  }
+
+  // Group and sort
+  let groupedInvestments = groupInvestments(filteredInvestments);
+
+  // Sort grouped investments
+  if (sortBy === 'pnl-desc') {
+    groupedInvestments.sort((a, b) => b.totalProfitAndLoss - a.totalProfitAndLoss);
+  } else if (sortBy === 'pnl-asc') {
+    groupedInvestments.sort((a, b) => a.totalProfitAndLoss - b.totalProfitAndLoss);
+  } else if (sortBy === 'pnl-percent-desc') {
+    groupedInvestments.sort((a, b) => b.totalProfitAndLossPercentage - a.totalProfitAndLossPercentage);
+  } else if (sortBy === 'pnl-percent-asc') {
+    groupedInvestments.sort((a, b) => a.totalProfitAndLossPercentage - b.totalProfitAndLossPercentage);
+  } else if (sortBy === 'value-desc') {
+    groupedInvestments.sort((a, b) => b.totalCurrentValue - a.totalCurrentValue);
+  } else if (sortBy === 'value-asc') {
+    groupedInvestments.sort((a, b) => a.totalCurrentValue - b.totalCurrentValue);
+  } else {
+    // name (default)
+    groupedInvestments.sort((a, b) => a.name.localeCompare(b.name));
+  }
 
   const toggleGroup = (groupKey: string) => {
     setExpandedGroups((prev) => {
@@ -139,6 +176,71 @@ export default function InvestmentTable({ investments, loading, onDelete, onEdit
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Filter Bar */}
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="flex flex-wrap gap-4 items-center">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase">Sort by:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="name">Name (A-Z)</option>
+              <option value="pnl-desc">🔥 Best P&L (€)</option>
+              <option value="pnl-asc">❄️ Worst P&L (€)</option>
+              <option value="pnl-percent-desc">🔥 Best P&L (%)</option>
+              <option value="pnl-percent-asc">❄️ Worst P&L (%)</option>
+              <option value="value-desc">Highest Value</option>
+              <option value="value-asc">Lowest Value</option>
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-semibold text-gray-500 uppercase">Type:</label>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="ALL">All Types</option>
+              {uniqueTypes.map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </div>
+
+          {uniqueBrokers.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-gray-500 uppercase">Broker:</label>
+              <select
+                value={filterBroker}
+                onChange={(e) => setFilterBroker(e.target.value)}
+                className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              >
+                <option value="ALL">All Brokers</option>
+                {uniqueBrokers.map(broker => (
+                  <option key={broker} value={broker}>{broker}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {(filterType !== 'ALL' || filterBroker !== 'ALL' || sortBy !== 'name') && (
+            <button
+              onClick={() => {
+                setSortBy('name');
+                setFilterType('ALL');
+                setFilterBroker('ALL');
+              }}
+              className="ml-auto px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900 underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
