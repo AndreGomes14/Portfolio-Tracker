@@ -3,6 +3,7 @@ import type { InvestmentResponse, InvestmentRequest, PortfolioSummaryResponse } 
 import { investmentApi } from '../api/investmentApi';
 import { exportToExcel } from '../utils/excelExport';
 import SummaryCards from './SummaryCards';
+import PortfolioHistoryChart from './PortfolioHistoryChart';
 import InvestmentTable from './InvestmentTable';
 import AddInvestmentForm from './AddInvestmentForm';
 
@@ -138,6 +139,11 @@ export default function Dashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Summary Cards */}
         <SummaryCards summary={summary} loading={loading} />
+
+        {/* Portfolio History Chart */}
+        <div className="mb-8">
+          <PortfolioHistoryChart />
+        </div>
 
         {/* Add/Edit Investment Form */}
         {showForm && (

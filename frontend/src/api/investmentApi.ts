@@ -27,4 +27,7 @@ export const investmentApi = {
 
   refreshPrices: () =>
     api.post<InvestmentResponse[]>('/portfolio/refresh-prices').then((res) => res.data),
+
+  takeSnapshot: () =>
+    api.post('/portfolio/snapshot').then((res) => res.data),
 };

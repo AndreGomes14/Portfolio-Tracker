@@ -22,6 +22,10 @@ public class PortfolioSnapshot {
     @Column(name = "snapshot_date", nullable = false)
     private LocalDateTime snapshotDate;
 
+    @Column(name = "total_portfolio_value", nullable = false)
+    @Builder.Default
+    private Double totalPortfolioValue = 0.0;
+
     @Column(name = "total_invested_amount", nullable = false)
     @Builder.Default
     private Double totalInvestedAmount = 0.0;

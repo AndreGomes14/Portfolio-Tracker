@@ -36,7 +36,7 @@ springdoc:
 # Portfolio Tracker Config
 portfolio:
   snapshot:
-    cron: "0 0 0 * * *"  # Daily at midnight
+    cron: "0 0 * * * *"   # Every hour at minute 0 (while app is running)
 
 # Logging
 logging:

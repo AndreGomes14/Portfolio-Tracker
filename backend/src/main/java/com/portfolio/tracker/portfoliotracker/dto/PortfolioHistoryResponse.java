@@ -13,6 +13,7 @@ public class PortfolioHistoryResponse {
 
     private Long id;
     private LocalDateTime snapshotDate;
+    private Double totalPortfolioValue;
     private Double totalInvestedAmount;
     private Double totalCurrentValue;
     private Double totalProfitAndLoss;

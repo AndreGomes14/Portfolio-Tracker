@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -31,12 +32,34 @@ public class PortfolioController {
 
     @GetMapping("/history")
     public ResponseEntity<List<PortfolioHistoryResponse>> getPortfolioHistory(
-            @RequestParam(defaultValue = "30") int days) {
-        return ResponseEntity.ok(snapshotService.getHistory(days));
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) Integer days) {
+        
+        // If startDate and endDate are provided, use date range
+        if (startDate != null && endDate != null) {
+            LocalDateTime start = LocalDateTime.parse(startDate + "T00:00:00");
+            LocalDateTime end = LocalDateTime.parse(endDate + "T23:59:59");
+            return ResponseEntity.ok(snapshotService.getHistoryByDateRange(start, end));
+        }
+        
+        // If days is provided, use days filter
+        if (days != null) {
+            return ResponseEntity.ok(snapshotService.getHistory(days));
+        }
+        
+        // Otherwise return all history
+        return ResponseEntity.ok(snapshotService.getAllHistory());
     }
 
     @PostMapping("/refresh-prices")
     public ResponseEntity<List<InvestmentResponse>> refreshPrices() {
         return ResponseEntity.ok(investmentService.refreshPrices());
+    }
+
+    @PostMapping("/snapshot")
+    public ResponseEntity<Void> takeSnapshot() {
+        snapshotService.takeSnapshot();
+        return ResponseEntity.ok().build();
     }
 }
