@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { InvestmentResponse, InvestmentRequest, PortfolioSummaryResponse } from '../types';
 import { investmentApi } from '../api/investmentApi';
 import SummaryCards from './SummaryCards';
@@ -12,6 +12,7 @@ export default function Dashboard() {
   const [showForm, setShowForm] = useState(false);
   const [editingInvestment, setEditingInvestment] = useState<InvestmentResponse | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const formSectionRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -50,6 +51,13 @@ export default function Dashboard() {
     setEditingInvestment(investment);
     setShowForm(true);
   };
+
+  // Scroll to the edit form when user clicks Edit
+  useEffect(() => {
+    if (editingInvestment && showForm && formSectionRef.current) {
+      formSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [editingInvestment, showForm]);
 
   const handleCancelForm = () => {
     setShowForm(false);
@@ -117,11 +125,13 @@ export default function Dashboard() {
 
         {/* Add/Edit Investment Form */}
         {showForm && (
+          <div ref={formSectionRef}>
           <AddInvestmentForm
             onSubmit={editingInvestment ? handleEditInvestment : handleAddInvestment}
             onCancel={handleCancelForm}
             editingInvestment={editingInvestment}
           />
+          </div>
         )}
 
         {/* Investments Table */}

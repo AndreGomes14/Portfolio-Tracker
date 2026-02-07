@@ -24,6 +24,7 @@ CREATE TABLE investments (
     quantity        DOUBLE PRECISION NOT NULL CHECK (quantity >= 0),
     average_purchase_price DOUBLE PRECISION NOT NULL CHECK (average_purchase_price >= 0),
     current_price   DOUBLE PRECISION NOT NULL DEFAULT 0 CHECK (current_price >= 0),
+    broker          VARCHAR(80),
     notes           VARCHAR(500),
     created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -50,3 +51,6 @@ CREATE INDEX idx_snapshots_date ON portfolio_snapshots(snapshot_date DESC);
 
 -- Unique constraint: one snapshot per day
 CREATE UNIQUE INDEX idx_snapshots_unique_date ON portfolio_snapshots(DATE(snapshot_date));
+
+-- For existing DBs (if you added broker later), run:
+-- ALTER TABLE investments ADD COLUMN IF NOT EXISTS broker VARCHAR(80);

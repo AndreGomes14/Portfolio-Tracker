@@ -26,6 +26,7 @@ public class InvestmentResponse {
     private Double profitAndLoss;
     private Double profitAndLossPercentage;
 
+    private String broker;
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

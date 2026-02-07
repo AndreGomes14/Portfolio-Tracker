@@ -32,6 +32,9 @@ public class InvestmentRequest {
     @Min(value = 0, message = "Current price must be >= 0")
     private Double currentPrice;
 
+    @Size(max = 80)
+    private String broker;
+
     @Size(max = 500)
     private String notes;
 }

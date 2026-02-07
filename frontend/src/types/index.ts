@@ -7,6 +7,7 @@ export interface InvestmentRequest {
   quantity: number;
   averagePurchasePrice: number;
   currentPrice?: number;
+  broker?: string;
   notes?: string;
 }
 
@@ -22,6 +23,7 @@ export interface InvestmentResponse {
   totalInvested: number;
   profitAndLoss: number;
   profitAndLossPercentage: number;
+  broker: string | null;
   notes: string | null;
   createdAt: string;
   updatedAt: string;
