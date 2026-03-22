@@ -17,10 +17,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
-/**
- * Stateless JWT filter. Runs once per request, extracts the Bearer token,
- * validates it, and populates the SecurityContext.
- */
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -41,7 +37,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader(AUTH_HEADER);
 
-        // No Bearer token → continue the chain (public endpoints will pass, secured ones will 401)
         if (authHeader == null || !authHeader.startsWith(BEARER_PREFIX)) {
             filterChain.doFilter(request, response);
             return;
@@ -51,7 +46,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final String jwt = authHeader.substring(BEARER_PREFIX.length());
             final String username = jwtService.extractUsername(jwt);
 
-            // Only authenticate if not already authenticated in this request
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
@@ -68,7 +62,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             log.debug("JWT authentication failed: {}", e.getMessage());
-            // Don't set authentication — request will be rejected by SecurityConfig if endpoint is protected
         }
 
         filterChain.doFilter(request, response);

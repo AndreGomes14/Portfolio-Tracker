@@ -10,14 +10,9 @@ import java.util.List;
 
 @Repository
 public interface InvestmentRepository extends JpaRepository<Investment, Long> {
-
-    // --- Ownership-scoped queries ---
-
     List<Investment> findAllByOwner(User owner);
 
     List<Investment> findByOwnerAndTypeIn(User owner, List<InvestmentType> types);
-
-    // --- Legacy (kept for scheduled jobs that refresh ALL prices across users) ---
 
     List<Investment> findByTypeIn(List<InvestmentType> types);
 }

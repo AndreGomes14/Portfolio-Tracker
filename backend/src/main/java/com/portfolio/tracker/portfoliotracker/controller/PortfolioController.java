@@ -12,10 +12,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * REST Controller for Portfolio summary, history, and price refresh.
- * Strictly delegates all logic to InvestmentService and SnapshotService.
- */
 @RestController
 @RequestMapping("/api/portfolio")
 @RequiredArgsConstructor

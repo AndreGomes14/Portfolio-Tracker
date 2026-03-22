@@ -13,10 +13,6 @@ import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
 
-/**
- * Stateless JWT token generation and validation service.
- * Uses HMAC-SHA256 (HS256) signing via jjwt.
- */
 @Service
 public class JwtService {
 
@@ -30,9 +26,6 @@ public class JwtService {
         this.expirationMs = expirationMs;
     }
 
-    /**
-     * Generate a signed JWT for the given user.
-     */
     public String generateToken(UserDetails userDetails) {
         Instant now = Instant.now();
         return Jwts.builder()
@@ -43,16 +36,10 @@ public class JwtService {
                 .compact();
     }
 
-    /**
-     * Extract the subject (email) from a token.
-     */
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
     }
 
-    /**
-     * Validate token against the given UserDetails.
-     */
     public boolean isTokenValid(String token, UserDetails userDetails) {
         try {
             String username = extractUsername(token);

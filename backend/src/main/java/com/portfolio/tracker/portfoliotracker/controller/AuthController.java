@@ -10,10 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * Public authentication endpoints — login and register.
- * Strictly delegates all logic to AuthService.
- */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

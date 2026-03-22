@@ -14,10 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Authentication business logic — registration and login.
- * Controllers remain thin; all logic lives here (SOLID / SRP).
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,9 +24,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
-    /**
-     * Register a new user and return a signed JWT.
-     */
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -50,9 +43,6 @@ public class AuthService {
         return new AuthResponse(token, saved.getId(), saved.getEmail(), saved.getDisplayName());
     }
 
-    /**
-     * Authenticate an existing user and return a signed JWT.
-     */
     public AuthResponse login(AuthRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password())

@@ -19,9 +19,6 @@ public class PortfolioSnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /**
-     * Owner of this snapshot — enforces "Strict Resource Ownership".
-     */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;

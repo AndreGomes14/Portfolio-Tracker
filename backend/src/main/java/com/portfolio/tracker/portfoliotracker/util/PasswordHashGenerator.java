@@ -2,10 +2,6 @@ package com.portfolio.tracker.portfoliotracker.util;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-/**
- * Utility to generate BCrypt password hashes (e.g. for seeding users or scripts).
- * Run from IDE or: mvn exec:java -Dexec.mainClass="...util.PasswordHashGenerator" -Dexec.args="yourpassword"
- */
 public class PasswordHashGenerator {
 
     public static void main(String[] args) {

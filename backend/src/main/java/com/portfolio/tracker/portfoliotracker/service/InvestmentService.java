@@ -15,11 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Business logic for Investment CRUD.
- * Every operation is scoped to the authenticated user ("Strict Resource Ownership").
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -29,9 +26,6 @@ public class InvestmentService {
     private final InvestmentMapper investmentMapper;
     private final PriceService priceService;
 
-    /**
-     * Retrieve all investments owned by the authenticated user.
-     */
     @Transactional(readOnly = true)
     public List<InvestmentResponse> getAllInvestments() {
         User owner = getAuthenticatedUser();
@@ -39,26 +33,18 @@ public class InvestmentService {
         return investmentMapper.toResponseList(investments);
     }
 
-    /**
-     * Get a single investment by ID — verifies ownership.
-     */
     @Transactional(readOnly = true)
     public InvestmentResponse getInvestmentById(Long id) {
         Investment investment = findOwnedInvestmentOrThrow(id);
         return investmentMapper.toResponse(investment);
     }
 
-    /**
-     * Create a new investment owned by the authenticated user.
-     * For CASH/OTHER types, currentPrice defaults to averagePurchasePrice if not provided.
-     */
     @Transactional
     public InvestmentResponse createInvestment(InvestmentRequest request) {
         User owner = getAuthenticatedUser();
         Investment investment = investmentMapper.toEntity(request);
         investment.setOwner(owner);
 
-        // Default currentPrice for manual types
         if (investment.getCurrentPrice() == null || investment.getCurrentPrice() == 0.0) {
             investment.setCurrentPrice(investment.getAveragePurchasePrice());
         }
@@ -68,15 +54,11 @@ public class InvestmentService {
         return investmentMapper.toResponse(saved);
     }
 
-    /**
-     * Update an existing investment — verifies ownership.
-     */
     @Transactional
     public InvestmentResponse updateInvestment(Long id, InvestmentRequest request) {
         Investment existing = findOwnedInvestmentOrThrow(id);
         investmentMapper.updateEntityFromRequest(request, existing);
 
-        // Default currentPrice for manual types if not set
         if (existing.getCurrentPrice() == null || existing.getCurrentPrice() == 0.0) {
             existing.setCurrentPrice(existing.getAveragePurchasePrice());
         }
@@ -86,9 +68,6 @@ public class InvestmentService {
         return investmentMapper.toResponse(saved);
     }
 
-    /**
-     * Delete an investment by ID — verifies ownership.
-     */
     @Transactional
     public void deleteInvestment(Long id) {
         Investment investment = findOwnedInvestmentOrThrow(id);
@@ -96,9 +75,6 @@ public class InvestmentService {
         log.info("Deleted investment: {} (id={})", investment.getName(), id);
     }
 
-    /**
-     * Manually trigger price refresh for the authenticated user's investments.
-     */
     @Transactional
     public List<InvestmentResponse> refreshPrices() {
         User owner = getAuthenticatedUser();
@@ -106,19 +82,12 @@ public class InvestmentService {
         return getAllInvestments();
     }
 
-    /**
-     * Calculate the portfolio summary from the authenticated user's investments.
-     * Total portfolio value = all investments. Total invested and return % exclude CASH and OTHER.
-     */
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getPortfolioSummary() {
         User owner = getAuthenticatedUser();
         return calculateSummaryForUser(owner);
     }
 
-    /**
-     * Calculate summary for a specific user — used by SnapshotService during scheduled jobs.
-     */
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse calculateSummaryForUser(User owner) {
         List<Investment> investments = investmentRepository.findAllByOwner(owner);
@@ -155,12 +124,6 @@ public class InvestmentService {
                 .build();
     }
 
-    // --- Private helpers ---
-
-    /**
-     * Find an investment by ID scoped to the authenticated user.
-     * Throws 404 if not found, 403 if found but not owned.
-     */
     private Investment findOwnedInvestmentOrThrow(Long id) {
         User owner = getAuthenticatedUser();
         Investment investment = investmentRepository.findById(id)
@@ -172,10 +135,7 @@ public class InvestmentService {
         return investment;
     }
 
-    /**
-     * Extract the authenticated User from the SecurityContext.
-     */
     private User getAuthenticatedUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
     }
 }

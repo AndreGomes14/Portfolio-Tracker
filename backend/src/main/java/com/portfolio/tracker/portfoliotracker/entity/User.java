@@ -12,10 +12,6 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Application user entity. Implements Spring Security's UserDetails
- * so it can be used directly as the authenticated principal.
- */
 @Entity
 @Table(name = "users")
 @Getter
@@ -50,8 +46,6 @@ public class User implements UserDetails {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    // --- UserDetails contract ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

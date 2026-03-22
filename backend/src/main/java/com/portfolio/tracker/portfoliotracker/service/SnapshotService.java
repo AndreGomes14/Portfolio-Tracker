@@ -17,12 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
 
-/**
- * Service responsible for taking portfolio snapshots.
- * Scheduled job runs every hour for ALL users.
- * Manual trigger and queries are scoped to the authenticated user.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -32,34 +28,7 @@ public class SnapshotService {
     private final InvestmentService investmentService;
     private final PortfolioSnapshotRepository snapshotRepository;
     private final PortfolioSnapshotMapper snapshotMapper;
-    private final UserRepository userRepository;
 
-    /**
-     * Hourly scheduled job — takes snapshots for ALL users.
-     * No SecurityContext available here (system job), so we iterate all users.
-     */
-    @Scheduled(cron = "${portfolio.snapshot.cron:0 0 * * * *}")
-    @Transactional
-    public void takeScheduledSnapshot() {
-        log.info("Starting scheduled hourly portfolio snapshots for all users...");
-
-        // Refresh prices globally first (shared price data)
-        priceService.refreshAllPrices();
-
-        // Take a snapshot for each user
-        List<User> users = userRepository.findAll();
-        for (User user : users) {
-            try {
-                takeSnapshotForUser(user);
-            } catch (Exception e) {
-                log.error("Failed to take snapshot for user {}: {}", user.getEmail(), e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * Manual snapshot trigger — scoped to the authenticated user.
-     */
     @Transactional
     public void takeSnapshot() {
         User owner = getAuthenticatedUser();
@@ -67,9 +36,6 @@ public class SnapshotService {
         takeSnapshotForUser(owner);
     }
 
-    /**
-     * Take a snapshot for a specific user. Replaces any snapshot in the current hour.
-     */
     @Transactional
     public void takeSnapshotForUser(User owner) {
         try {
@@ -79,7 +45,6 @@ public class SnapshotService {
             LocalDateTime hourStart = now.truncatedTo(ChronoUnit.HOURS);
             LocalDateTime hourEnd = hourStart.plusHours(1);
 
-            // Replace existing snapshot in the current hour for this user
             List<PortfolioSnapshot> existingInHour = snapshotRepository
                     .findByOwnerAndSnapshotDateGreaterThanEqualAndSnapshotDateLessThan(owner, hourStart, hourEnd);
             if (!existingInHour.isEmpty()) {
@@ -108,9 +73,6 @@ public class SnapshotService {
         }
     }
 
-    /**
-     * Retrieve portfolio history for the last N days — scoped to authenticated user.
-     */
     @Transactional(readOnly = true)
     public List<PortfolioHistoryResponse> getHistory(int days) {
         User owner = getAuthenticatedUser();
@@ -120,9 +82,6 @@ public class SnapshotService {
         return snapshotMapper.toResponseList(snapshots);
     }
 
-    /**
-     * Retrieve portfolio history between two dates — scoped to authenticated user.
-     */
     @Transactional(readOnly = true)
     public List<PortfolioHistoryResponse> getHistoryByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         User owner = getAuthenticatedUser();
@@ -131,9 +90,6 @@ public class SnapshotService {
         return snapshotMapper.toResponseList(snapshots);
     }
 
-    /**
-     * Retrieve all portfolio history — scoped to authenticated user.
-     */
     @Transactional(readOnly = true)
     public List<PortfolioHistoryResponse> getAllHistory() {
         User owner = getAuthenticatedUser();
@@ -141,9 +97,7 @@ public class SnapshotService {
         return snapshotMapper.toResponseList(snapshots);
     }
 
-    // --- Private helpers ---
-
     private User getAuthenticatedUser() {
-        return (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
     }
 }

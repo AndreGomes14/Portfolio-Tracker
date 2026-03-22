@@ -10,9 +10,6 @@ import java.util.List;
 
 @Repository
 public interface PortfolioSnapshotRepository extends JpaRepository<PortfolioSnapshot, Long> {
-
-    // --- Ownership-scoped queries ---
-
     List<PortfolioSnapshot> findByOwnerAndSnapshotDateAfterOrderBySnapshotDateAsc(User owner, LocalDateTime date);
 
     List<PortfolioSnapshot> findByOwnerAndSnapshotDateBetweenOrderBySnapshotDateAsc(

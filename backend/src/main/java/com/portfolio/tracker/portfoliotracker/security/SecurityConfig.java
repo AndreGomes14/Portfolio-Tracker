@@ -25,19 +25,14 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-/**
- * Spring Security 7 configuration — stateless JWT, CORS, and method-level security.
- * Replaces per-controller @CrossOrigin with centralized CORS config.
- */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity                    // Enables @PreAuthorize on services
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserRepository userRepository;
 
-    // Manual constructor with @Lazy to break circular dependency
     public SecurityConfig(@Lazy JwtAuthenticationFilter jwtAuthFilter, UserRepository userRepository) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.userRepository = userRepository;
