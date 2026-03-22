@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { InvestmentResponse, InvestmentRequest, PortfolioSummaryResponse } from '../types';
 import { investmentApi } from '../api/investmentApi';
 import { exportToExcel } from '../utils/excelExport';
+import { useAuth } from '../context/AuthContext';
 import SummaryCards from './SummaryCards';
 import PortfolioHistoryChart from './PortfolioHistoryChart';
 import AllocationDonutChart from './AllocationDonutChart';
@@ -9,6 +10,7 @@ import InvestmentTable from './InvestmentTable';
 import AddInvestmentForm from './AddInvestmentForm';
 
 export default function Dashboard() {
+  const { user, logout } = useAuth();
   const [investments, setInvestments] = useState<InvestmentResponse[]>([]);
   const [summary, setSummary] = useState<PortfolioSummaryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,9 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Portfolio Tracker</h1>
-              <p className="text-sm text-gray-500 mt-0.5">Track your investments in real time</p>
+              <p className="text-sm text-gray-500 mt-0.5">
+                {user ? `Welcome, ${user.displayName}` : 'Track your investments in real time'}
+              </p>
             </div>
             <div className="flex gap-3">
               <button
@@ -154,6 +158,16 @@ export default function Dashboard() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Export Excel
+              </button>
+              <button
+                onClick={logout}
+                className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors cursor-pointer flex items-center gap-2"
+                title="Sign Out"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign Out
               </button>
             </div>
           </div>

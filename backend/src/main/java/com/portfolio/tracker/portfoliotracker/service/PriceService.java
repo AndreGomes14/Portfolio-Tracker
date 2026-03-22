@@ -2,6 +2,7 @@ package com.portfolio.tracker.portfoliotracker.service;
 
 import com.portfolio.tracker.portfoliotracker.entity.Investment;
 import com.portfolio.tracker.portfoliotracker.entity.InvestmentType;
+import com.portfolio.tracker.portfoliotracker.entity.User;
 import com.portfolio.tracker.portfoliotracker.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +11,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.*;
 
-/**
- * Service responsible for fetching live prices from external APIs.
- * Uses CoinGecko for CRYPTO and a Yahoo Finance proxy for STOCK/ETF.
- */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -26,27 +23,20 @@ public class PriceService {
     private static final String YAHOO_FINANCE_API = "https://query1.finance.yahoo.com/v8/finance/chart";
     private static final String EXCHANGE_RATE_API = "https://api.exchangerate-api.com/v4/latest/USD";
 
-    // Cache for USD to EUR exchange rate (refresh every 24h in production)
     private Double usdToEurRate = null;
 
-    /**
-     * Refresh prices for all auto-updatable investments (STOCK, CRYPTO, ETF).
-     * Returns the list of updated investments.
-     */
-    public List<Investment> refreshAllPrices() {
+    public void refreshAllPrices() {
         List<Investment> autoUpdatable = investmentRepository.findByTypeIn(
                 List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
         );
 
         if (autoUpdatable.isEmpty()) {
             log.info("No auto-updatable investments found.");
-            return List.of();
+            return;
         }
 
-        // Fetch exchange rate for USD to EUR conversion
         fetchUsdToEurRate();
 
-        // Separate crypto from stock/etf
         List<Investment> cryptos = autoUpdatable.stream()
                 .filter(i -> i.getType() == InvestmentType.CRYPTO)
                 .toList();
@@ -63,12 +53,34 @@ public class PriceService {
 
         investmentRepository.saveAll(autoUpdatable);
         log.info("Refreshed prices for {} investments.", autoUpdatable.size());
-        return autoUpdatable;
     }
 
-    /**
-     * Fetch USD to EUR exchange rate from external API.
-     */
+    public void refreshPricesForUser(User owner) {
+        List<Investment> autoUpdatable = investmentRepository.findByOwnerAndTypeIn(
+                owner, List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
+        );
+
+        if (autoUpdatable.isEmpty()) {
+            log.info("No auto-updatable investments found for user {}.", owner.getEmail());
+            return;
+        }
+
+        fetchUsdToEurRate();
+
+        List<Investment> cryptos = autoUpdatable.stream()
+                .filter(i -> i.getType() == InvestmentType.CRYPTO)
+                .toList();
+        List<Investment> stocksAndEtfs = autoUpdatable.stream()
+                .filter(i -> i.getType() != InvestmentType.CRYPTO)
+                .toList();
+
+        if (!cryptos.isEmpty()) refreshCryptoPrices(cryptos);
+        if (!stocksAndEtfs.isEmpty()) refreshStockPrices(stocksAndEtfs);
+
+        investmentRepository.saveAll(autoUpdatable);
+        log.info("Refreshed prices for {} investments (user: {}).", autoUpdatable.size(), owner.getEmail());
+    }
+
     private void fetchUsdToEurRate() {
         try {
             WebClient client = webClientBuilder.baseUrl(EXCHANGE_RATE_API).build();
@@ -90,7 +102,6 @@ public class PriceService {
             }
         } catch (Exception e) {
             log.error("Failed to fetch USD to EUR exchange rate: {}", e.getMessage());
-            // Fallback to approximate rate if API fails
             if (usdToEurRate == null) {
                 usdToEurRate = 0.92; // Approximate fallback
                 log.warn("Using fallback USD to EUR rate: {}", usdToEurRate);
@@ -98,10 +109,6 @@ public class PriceService {
         }
     }
 
-    /**
-     * Fetch crypto prices from CoinGecko in USD, then convert to EUR.
-     * Ticker is expected to be the CoinGecko ID (e.g., "bitcoin", "ethereum").
-     */
     private void refreshCryptoPrices(List<Investment> cryptos) {
         try {
             String ids = cryptos.stream()
@@ -131,9 +138,8 @@ public class PriceService {
                     String tickerLower = crypto.getTicker() != null ? crypto.getTicker().toLowerCase() : "";
                     Map<String, Object> priceData = response.get(tickerLower);
                     if (priceData != null && priceData.get("usd") != null) {
-                        Double priceUsd = ((Number) priceData.get("usd")).doubleValue();
-                        
-                        // Convert USD to EUR
+                        double priceUsd = ((Number) priceData.get("usd")).doubleValue();
+
                         Double priceEur = priceUsd * (usdToEurRate != null ? usdToEurRate : 0.92);
                         crypto.setCurrentPrice(priceEur);
                         
@@ -146,10 +152,6 @@ public class PriceService {
         }
     }
 
-    /**
-     * Fetch stock/ETF prices from Yahoo Finance.
-     * Ticker is expected to be the market symbol (e.g., "AAPL", "SPY").
-     */
     private void refreshStockPrices(List<Investment> stocks) {
         WebClient client = webClientBuilder.baseUrl(YAHOO_FINANCE_API).build();
 
@@ -178,9 +180,6 @@ public class PriceService {
         }
     }
 
-    /**
-     * Extract the regular market price from the Yahoo Finance API response.
-     */
     @SuppressWarnings("unchecked")
     private Double extractYahooPrice(Map<String, Object> response) {
         try {

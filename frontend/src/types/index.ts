@@ -38,3 +38,29 @@ export interface PortfolioSummaryResponse {
   totalProfitAndLossPercentage: number;
   investmentCount: number;
 }
+
+// --- Auth types ---
+
+export interface AuthResponse {
+  token: string;
+  userId: number;
+  email: string;
+  displayName: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  displayName: string;
+  password: string;
+}
+
+export interface AuthUser {
+  userId: number;
+  email: string;
+  displayName: string;
+}

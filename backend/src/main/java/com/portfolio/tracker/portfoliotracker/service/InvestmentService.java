@@ -3,15 +3,19 @@ package com.portfolio.tracker.portfoliotracker.service;
 import com.portfolio.tracker.portfoliotracker.dto.*;
 import com.portfolio.tracker.portfoliotracker.entity.Investment;
 import com.portfolio.tracker.portfoliotracker.entity.InvestmentType;
+import com.portfolio.tracker.portfoliotracker.entity.User;
 import com.portfolio.tracker.portfoliotracker.exception.ResourceNotFoundException;
+import com.portfolio.tracker.portfoliotracker.exception.ResourceOwnershipException;
 import com.portfolio.tracker.portfoliotracker.mapper.InvestmentMapper;
 import com.portfolio.tracker.portfoliotracker.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -22,51 +26,39 @@ public class InvestmentService {
     private final InvestmentMapper investmentMapper;
     private final PriceService priceService;
 
-    /**
-     * Retrieve all investments as DTOs.
-     */
     @Transactional(readOnly = true)
     public List<InvestmentResponse> getAllInvestments() {
-        List<Investment> investments = investmentRepository.findAll();
+        User owner = getAuthenticatedUser();
+        List<Investment> investments = investmentRepository.findAllByOwner(owner);
         return investmentMapper.toResponseList(investments);
     }
 
-    /**
-     * Get a single investment by ID.
-     */
     @Transactional(readOnly = true)
     public InvestmentResponse getInvestmentById(Long id) {
-        Investment investment = findInvestmentOrThrow(id);
+        Investment investment = findOwnedInvestmentOrThrow(id);
         return investmentMapper.toResponse(investment);
     }
 
-    /**
-     * Create a new investment.
-     * For CASH/OTHER types, currentPrice defaults to averagePurchasePrice if not provided.
-     */
     @Transactional
     public InvestmentResponse createInvestment(InvestmentRequest request) {
+        User owner = getAuthenticatedUser();
         Investment investment = investmentMapper.toEntity(request);
+        investment.setOwner(owner);
 
-        // Default currentPrice for manual types
         if (investment.getCurrentPrice() == null || investment.getCurrentPrice() == 0.0) {
             investment.setCurrentPrice(investment.getAveragePurchasePrice());
         }
 
         Investment saved = investmentRepository.save(investment);
-        log.info("Created investment: {} ({})", saved.getName(), saved.getType());
+        log.info("Created investment: {} ({}) for user {}", saved.getName(), saved.getType(), owner.getEmail());
         return investmentMapper.toResponse(saved);
     }
 
-    /**
-     * Update an existing investment.
-     */
     @Transactional
     public InvestmentResponse updateInvestment(Long id, InvestmentRequest request) {
-        Investment existing = findInvestmentOrThrow(id);
+        Investment existing = findOwnedInvestmentOrThrow(id);
         investmentMapper.updateEntityFromRequest(request, existing);
 
-        // Default currentPrice for manual types if not set
         if (existing.getCurrentPrice() == null || existing.getCurrentPrice() == 0.0) {
             existing.setCurrentPrice(existing.getAveragePurchasePrice());
         }
@@ -76,37 +68,34 @@ public class InvestmentService {
         return investmentMapper.toResponse(saved);
     }
 
-    /**
-     * Delete an investment by ID.
-     */
     @Transactional
     public void deleteInvestment(Long id) {
-        Investment investment = findInvestmentOrThrow(id);
+        Investment investment = findOwnedInvestmentOrThrow(id);
         investmentRepository.delete(investment);
         log.info("Deleted investment: {} (id={})", investment.getName(), id);
     }
 
-    /**
-     * Manually trigger price refresh and return updated list.
-     */
     @Transactional
     public List<InvestmentResponse> refreshPrices() {
-        priceService.refreshAllPrices();
+        User owner = getAuthenticatedUser();
+        priceService.refreshPricesForUser(owner);
         return getAllInvestments();
     }
 
-    /**
-     * Calculate the portfolio summary from all investments.
-     * Total portfolio value = all investments. Total invested and return % exclude CASH and OTHER.
-     */
     @Transactional(readOnly = true)
     public PortfolioSummaryResponse getPortfolioSummary() {
-        List<Investment> investments = investmentRepository.findAll();
+        User owner = getAuthenticatedUser();
+        return calculateSummaryForUser(owner);
+    }
+
+    @Transactional(readOnly = true)
+    public PortfolioSummaryResponse calculateSummaryForUser(User owner) {
+        List<Investment> investments = investmentRepository.findAllByOwner(owner);
 
         double totalPortfolioValue = 0.0;
         double totalCash = 0.0;
-        double totalInvested = 0.0;   // STOCK, CRYPTO, ETF only
-        double totalCurrentValue = 0.0; // STOCK, CRYPTO, ETF only (for return %)
+        double totalInvested = 0.0;
+        double totalCurrentValue = 0.0;
 
         for (Investment inv : investments) {
             double currentVal = inv.getQuantity() * inv.getCurrentPrice();
@@ -135,10 +124,18 @@ public class InvestmentService {
                 .build();
     }
 
-    // --- Private helpers ---
-
-    private Investment findInvestmentOrThrow(Long id) {
-        return investmentRepository.findById(id)
+    private Investment findOwnedInvestmentOrThrow(Long id) {
+        User owner = getAuthenticatedUser();
+        Investment investment = investmentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Investment", id));
+
+        if (!investment.getOwner().getId().equals(owner.getId())) {
+            throw new ResourceOwnershipException("Investment", id, owner.getId());
+        }
+        return investment;
+    }
+
+    private User getAuthenticatedUser() {
+        return (User) Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getPrincipal();
     }
 }

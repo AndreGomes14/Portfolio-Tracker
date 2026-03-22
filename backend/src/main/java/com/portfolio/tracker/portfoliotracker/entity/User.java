@@ -4,51 +4,40 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
-@Table(name = "investments")
+@Table(name = "users")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Investment {
+public class User implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "owner_id", nullable = false)
-    private User owner;
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
 
     @Column(nullable = false, length = 100)
-    private String name;
+    private String displayName;
 
-    @Column(length = 20)
-    private String ticker;
+    @Column(nullable = false)
+    private String password;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private InvestmentType type;
-
-    @Column(nullable = false)
-    private Double quantity;
-
-    @Column(name = "average_purchase_price", nullable = false)
-    private Double averagePurchasePrice;
-
-    @Column(name = "current_price", nullable = false)
     @Builder.Default
-    private Double currentPrice = 0.0;
-
-    @Column(length = 80)
-    private String broker;
-
-    @Column(length = 500)
-    private String notes;
+    private Role role = Role.USER;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -58,4 +47,13 @@ public class Investment {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
 }

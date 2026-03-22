@@ -11,14 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * REST Controller for Investment CRUD operations.
- * Strictly delegates all logic to InvestmentService.
- */
 @RestController
 @RequestMapping("/api/investments")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class InvestmentController {
 
     private final InvestmentService investmentService;

@@ -33,34 +33,24 @@ export default function PortfolioHistoryChart() {
     setError(null);
 
     try {
-      let url = '/api/portfolio/history';
+      let params = '';
       const now = new Date();
 
       if (range === '1W') {
-        // Last 7 days
-        url += '?days=7';
+        params = 'days=7';
       } else if (range === '1M') {
-        // Last 30 days
-        url += '?days=30';
+        params = 'days=30';
       } else if (range === 'YTD') {
-        // Year to date - from Jan 1st of current year
         const startOfYear = new Date(now.getFullYear(), 0, 1);
         const startDate = startOfYear.toISOString().split('T')[0];
         const endDate = now.toISOString().split('T')[0];
-        url += `?startDate=${startDate}&endDate=${endDate}`;
+        params = `startDate=${startDate}&endDate=${endDate}`;
       } else if (range === '1Y') {
-        // Last 365 days
-        url += '?days=365';
-      } else if (range === 'ALL') {
-        // All history (no parameters)
-        url += '';
+        params = 'days=365';
       }
+      // 'ALL' → no params
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch history');
-      }
-      const historyData: HistoryDataPoint[] = await response.json();
+      const historyData: HistoryDataPoint[] = await investmentApi.getHistory(params);
       setData(historyData);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load chart data');

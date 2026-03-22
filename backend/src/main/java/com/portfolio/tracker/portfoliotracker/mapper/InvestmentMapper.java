@@ -9,10 +9,6 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface InvestmentMapper {
-
-    /**
-     * Map entity to response DTO with calculated fields.
-     */
     @Mapping(target = "currentValue", expression = "java(calculateCurrentValue(investment))")
     @Mapping(target = "totalInvested", expression = "java(calculateTotalInvested(investment))")
     @Mapping(target = "profitAndLoss", expression = "java(calculateProfitAndLoss(investment))")
@@ -21,23 +17,17 @@ public interface InvestmentMapper {
 
     List<InvestmentResponse> toResponseList(List<Investment> investments);
 
-    /**
-     * Map request DTO to entity (for creation).
-     */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Investment toEntity(InvestmentRequest request);
 
-    /**
-     * Update existing entity from request DTO.
-     */
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "owner", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateEntityFromRequest(InvestmentRequest request, @MappingTarget Investment investment);
-
-    // --- Calculation helper methods ---
 
     default Double calculateCurrentValue(Investment investment) {
         if (investment.getQuantity() == null || investment.getCurrentPrice() == null) return 0.0;

@@ -19,6 +19,10 @@ public class PortfolioSnapshot {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id", nullable = false)
+    private User owner;
+
     @Column(name = "snapshot_date", nullable = false)
     private LocalDateTime snapshotDate;
 

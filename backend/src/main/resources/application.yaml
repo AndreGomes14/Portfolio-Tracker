@@ -4,7 +4,7 @@ spring:
 
   # PostgreSQL Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5432/portfolio_tracker
+    url: jdbc:postgresql://localhost:5433/portfolio_tracker
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -32,6 +32,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+
+# JWT Configuration
+# IMPORTANT: Override jwt.secret in production via environment variable JWT_SECRET.
+# This Base64-encoded key is a 256-bit HMAC key for development only.
+jwt:
+  secret: ${JWT_SECRET:dGhpc0lzQVNlY3VyZURldmVsb3BtZW50S2V5Rm9yUG9ydGZvbGlvVHJhY2tlckFwcDIwMjY=}
+  expiration-ms: 86400000   # 24 hours
 
 # Portfolio Tracker Config
 portfolio:

@@ -20,7 +20,6 @@ public class InvestmentResponse {
     private Double averagePurchasePrice;
     private Double currentPrice;
 
-    // Calculated fields
     private Double currentValue;
     private Double totalInvested;
     private Double profitAndLoss;
