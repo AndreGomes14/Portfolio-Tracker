@@ -8,6 +8,7 @@ import PortfolioHistoryChart from './PortfolioHistoryChart';
 import AllocationDonutChart from './AllocationDonutChart';
 import InvestmentTable from './InvestmentTable';
 import AddInvestmentForm from './AddInvestmentForm';
+import RefreshPriceChangesModal, { type PriceChange } from './RefreshPriceChangesModal';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -19,6 +20,8 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [showAllocationModal, setShowAllocationModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showRefreshChangesModal, setShowRefreshChangesModal] = useState(false);
+  const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
   const formSectionRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -82,10 +85,39 @@ export default function Dashboard() {
   };
 
   const handleRefreshPrices = async () => {
+    const previousInvestments = investments;
     setRefreshing(true);
+
     try {
-      await investmentApi.refreshPrices();
-      await fetchData();
+      const updatedInvestments = await investmentApi.refreshPrices();
+
+      const changes = updatedInvestments
+        .map((updated) => {
+          const previous = previousInvestments.find((item) => item.id === updated.id);
+          if (!previous) return null;
+
+          const oldValue = previous.currentValue;
+          const newValue = updated.currentValue;
+          const change = Math.round((newValue - oldValue) * 100) / 100;
+
+          if (change === 0) return null;
+
+          return {
+            id: updated.id,
+            name: updated.name,
+            ticker: updated.ticker,
+            oldValue,
+            newValue,
+            change,
+          };
+        })
+        .filter((item): item is PriceChange => item !== null)
+        .sort((a, b) => b.change - a.change);
+
+      setInvestments(updatedInvestments);
+      setSummary(await investmentApi.getSummary());
+      setPriceChanges(changes);
+      setShowRefreshChangesModal(true);
     } catch (err) {
       console.error('Failed to refresh prices:', err);
     } finally {
@@ -204,6 +236,12 @@ export default function Dashboard() {
           onEdit={handleEdit}
         />
       </main>
+
+      <RefreshPriceChangesModal
+        open={showRefreshChangesModal}
+        changes={priceChanges}
+        onClose={() => setShowRefreshChangesModal(false)}
+      />
 
       {/* History Modal */}
       {showHistoryModal && (
