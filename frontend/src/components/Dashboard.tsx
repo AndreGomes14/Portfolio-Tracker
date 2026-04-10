@@ -22,6 +22,8 @@ export default function Dashboard() {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showRefreshChangesModal, setShowRefreshChangesModal] = useState(false);
   const [priceChanges, setPriceChanges] = useState<PriceChange[]>([]);
+  const [oldPortfolioValue, setOldPortfolioValue] = useState(0);
+  const [newPortfolioValue, setNewPortfolioValue] = useState(0);
   const formSectionRef = useRef<HTMLDivElement>(null);
 
   const fetchData = useCallback(async () => {
@@ -86,10 +88,19 @@ export default function Dashboard() {
 
   const handleRefreshPrices = async () => {
     const previousInvestments = investments;
+    const previousPortfolioValue = previousInvestments.reduce(
+      (sum, investment) => sum + investment.currentValue,
+      0,
+    );
+
     setRefreshing(true);
 
     try {
       const updatedInvestments = await investmentApi.refreshPrices();
+      const updatedPortfolioValue = updatedInvestments.reduce(
+        (sum, investment) => sum + investment.currentValue,
+        0,
+      );
 
       const changes = updatedInvestments
         .map((updated) => {
@@ -116,6 +127,8 @@ export default function Dashboard() {
 
       setInvestments(updatedInvestments);
       setSummary(await investmentApi.getSummary());
+      setOldPortfolioValue(previousPortfolioValue);
+      setNewPortfolioValue(updatedPortfolioValue);
       setPriceChanges(changes);
       setShowRefreshChangesModal(true);
     } catch (err) {
@@ -240,6 +253,8 @@ export default function Dashboard() {
       <RefreshPriceChangesModal
         open={showRefreshChangesModal}
         changes={priceChanges}
+        oldPortfolioValue={oldPortfolioValue}
+        newPortfolioValue={newPortfolioValue}
         onClose={() => setShowRefreshChangesModal(false)}
       />
 

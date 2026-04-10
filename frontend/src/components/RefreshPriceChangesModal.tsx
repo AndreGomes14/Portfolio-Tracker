@@ -10,6 +10,8 @@ type PriceChange = {
 interface RefreshPriceChangesModalProps {
   open: boolean;
   changes: PriceChange[];
+  oldPortfolioValue: number;
+  newPortfolioValue: number;
   onClose: () => void;
 }
 
@@ -18,9 +20,14 @@ export type { PriceChange };
 export default function RefreshPriceChangesModal({
   open,
   changes,
+  oldPortfolioValue,
+  newPortfolioValue,
   onClose,
 }: RefreshPriceChangesModalProps) {
   if (!open) return null;
+
+  const totalChange = Math.round((newPortfolioValue - oldPortfolioValue) * 100) / 100;
+  const totalChangeClass = totalChange > 0 ? 'text-emerald-600' : 'text-rose-600';
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -46,6 +53,31 @@ export default function RefreshPriceChangesModal({
             <p className="text-sm text-gray-500 mt-2">
               The list below shows assets whose value changed after refreshing prices.
             </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Old portfolio value</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">€{oldPortfolioValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">New portfolio value</p>
+                <p className="mt-2 text-lg font-semibold text-gray-900">€{newPortfolioValue.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                <p className="text-xs uppercase tracking-wide text-gray-500">Portfolio change</p>
+                <p className={`mt-2 text-lg font-semibold ${totalChangeClass}`}>
+                  {totalChange > 0 ? '+' : ''}€{Math.abs(totalChange).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+            </div>
             <div className="mt-5 space-y-3">
               {changes.length === 0 ? (
                 <div className="rounded-xl border border-gray-200 p-6 bg-gray-50 text-center text-sm text-gray-700">
@@ -63,7 +95,7 @@ export default function RefreshPriceChangesModal({
                         {change.ticker && <p className="text-xs text-gray-500">{change.ticker}</p>}
                       </div>
                       <span
-                        className={`text-sm font-semibold €{change.change > 0 ? 'text-emerald-600' : 'text-rose-600'}`}
+                        className={`text-sm font-semibold ${change.change > 0 ? 'text-emerald-600' : 'text-rose-600'}`}
                       >
                         {change.change > 0 ? '+' : ''}€{Math.abs(change.change).toLocaleString(undefined, {
                           minimumFractionDigits: 2,
