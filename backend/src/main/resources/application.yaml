@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: PortfolioTracker
+
+  # PostgreSQL Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5433/portfolio_tracker
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  # JPA / Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Jackson 3 (Spring Boot 4): dates serialize as ISO-8601 by default; no write-dates-as-timestamps
+
+# Server
+server:
+  port: 8080
+
+# Springdoc OpenAPI / Swagger UI
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
+# JWT Configuration
+# IMPORTANT: Override jwt.secret in production via environment variable JWT_SECRET.
+# This Base64-encoded key is a 256-bit HMAC key for development only.
+jwt:
+  secret: ${JWT_SECRET:dGhpc0lzQVNlY3VyZURldmVsb3BtZW50S2V5Rm9yUG9ydGZvbGlvVHJhY2tlckFwcDIwMjY=}
+  expiration-ms: 86400000   # 24 hours
+
+# Portfolio Tracker Config
+portfolio:
+  snapshot:
+    cron: "0 0 * * * *"   # Every hour at minute 0 (while app is running)
+
+# Logging
+logging:
+  level:
+    com.portfolio.tracker: DEBUG
+    org.springframework.web: INFO

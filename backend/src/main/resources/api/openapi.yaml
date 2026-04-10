@@ -1,0 +1,361 @@
+openapi: 3.0.3
+info:
+  title: Portfolio Tracker API
+  description: Personal Investment Tracking Application API
+  version: 1.0.0
+  contact:
+    name: Portfolio Tracker
+
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+
+tags:
+  - name: Investments
+    description: CRUD operations for investments
+  - name: Portfolio
+    description: Portfolio summary and history
+
+paths:
+  /investments:
+    get:
+      tags:
+        - Investments
+      summary: List all investments
+      operationId: getAllInvestments
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentResponse'
+    post:
+      tags:
+        - Investments
+      summary: Create a new investment
+      operationId: createInvestment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestmentRequest'
+      responses:
+        '201':
+          description: Investment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /investments/{id}:
+    get:
+      tags:
+        - Investments
+      summary: Get investment by ID
+      operationId: getInvestmentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentResponse'
+        '404':
+          description: Investment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Investments
+      summary: Update an existing investment
+      operationId: updateInvestment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestmentRequest'
+      responses:
+        '200':
+          description: Investment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentResponse'
+        '404':
+          description: Investment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Investments
+      summary: Delete an investment
+      operationId: deleteInvestment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: Investment deleted successfully
+        '404':
+          description: Investment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /portfolio/summary:
+    get:
+      tags:
+        - Portfolio
+      summary: Get current portfolio summary
+      operationId: getPortfolioSummary
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortfolioSummaryResponse'
+
+  /portfolio/history:
+    get:
+      tags:
+        - Portfolio
+      summary: Get portfolio history snapshots
+      operationId: getPortfolioHistory
+      parameters:
+        - name: days
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+          description: Number of days of history to retrieve
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PortfolioHistoryResponse'
+
+  /portfolio/refresh-prices:
+    post:
+      tags:
+        - Portfolio
+      summary: Manually trigger price refresh for auto-update assets
+      operationId: refreshPrices
+      responses:
+        '200':
+          description: Prices refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentResponse'
+
+components:
+  schemas:
+    InvestmentType:
+      type: string
+      enum:
+        - STOCK
+        - CRYPTO
+        - ETF
+        - CASH
+        - OTHER
+
+    InvestmentRequest:
+      type: object
+      required:
+        - name
+        - type
+        - quantity
+        - averagePurchasePrice
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          example: "Apple Inc."
+        ticker:
+          type: string
+          maxLength: 20
+          example: "AAPL"
+          description: "Required for STOCK, CRYPTO, and ETF types"
+        type:
+          $ref: '#/components/schemas/InvestmentType'
+        quantity:
+          type: number
+          format: double
+          minimum: 0
+          example: 10.0
+        averagePurchasePrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 150.50
+        currentPrice:
+          type: number
+          format: double
+          minimum: 0
+          example: 175.25
+          description: "Optional. For CASH/OTHER types, set manually. For STOCK/CRYPTO/ETF, auto-fetched."
+        broker:
+          type: string
+          maxLength: 80
+          example: "Interactive Brokers"
+        notes:
+          type: string
+          maxLength: 500
+
+    InvestmentResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        ticker:
+          type: string
+        type:
+          $ref: '#/components/schemas/InvestmentType'
+        quantity:
+          type: number
+          format: double
+        averagePurchasePrice:
+          type: number
+          format: double
+        currentPrice:
+          type: number
+          format: double
+        currentValue:
+          type: number
+          format: double
+          description: "Calculated: quantity * currentPrice"
+        totalInvested:
+          type: number
+          format: double
+          description: "Calculated: quantity * averagePurchasePrice"
+        profitAndLoss:
+          type: number
+          format: double
+          description: "Calculated: currentValue - totalInvested"
+        profitAndLossPercentage:
+          type: number
+          format: double
+          description: "Calculated: (profitAndLoss / totalInvested) * 100"
+        broker:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PortfolioSummaryResponse:
+      type: object
+      properties:
+        totalPortfolioValue:
+          type: number
+          format: double
+          description: Sum of current value of ALL investments (including CASH, OTHER)
+        totalCashAmount:
+          type: number
+          format: double
+          description: Sum of current value of CASH type investments only
+        totalInvestedAmount:
+          type: number
+          format: double
+          description: Sum of amount invested in STOCK, CRYPTO, ETF only (excludes CASH, OTHER)
+        totalCurrentValue:
+          type: number
+          format: double
+          description: Sum of current value of STOCK, CRYPTO, ETF only (used for return %)
+        totalProfitAndLoss:
+          type: number
+          format: double
+        totalProfitAndLossPercentage:
+          type: number
+          format: double
+          description: Return % based only on STOCK, CRYPTO, ETF (excludes CASH, OTHER)
+        investmentCount:
+          type: integer
+
+    PortfolioHistoryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        snapshotDate:
+          type: string
+          format: date-time
+        totalPortfolioValue:
+          type: number
+          format: double
+          description: Sum of current value of ALL investments (incl. cash)
+        totalInvestedAmount:
+          type: number
+          format: double
+          description: Sum of amount invested in STOCK, CRYPTO, ETF only
+        totalCurrentValue:
+          type: number
+          format: double
+          description: Sum of current value of STOCK, CRYPTO, ETF only (for return %)
+        totalProfitAndLoss:
+          type: number
+          format: double
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string

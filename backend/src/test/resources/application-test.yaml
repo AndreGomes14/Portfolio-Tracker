@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+jwt:
+  secret: dGhpc0lzQVRlc3RTZWNyZXRLZXlGb3JQb3J0Zm9saW9UcmFja2VyVGVzdHMyMDI2
+  expiration-ms: 3600000
+
+portfolio:
+  snapshot:
+    cron: "-"  # Disable scheduled tasks in tests
+
+logging:
+  level:
+    com.portfolio.tracker: WARN
