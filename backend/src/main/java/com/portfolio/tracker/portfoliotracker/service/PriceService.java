@@ -25,36 +25,6 @@ public class PriceService {
 
     private Double usdToEurRate = null;
 
-    public void refreshAllPrices() {
-        List<Investment> autoUpdatable = investmentRepository.findByTypeIn(
-                List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
-        );
-
-        if (autoUpdatable.isEmpty()) {
-            log.info("No auto-updatable investments found.");
-            return;
-        }
-
-        fetchUsdToEurRate();
-
-        List<Investment> cryptos = autoUpdatable.stream()
-                .filter(i -> i.getType() == InvestmentType.CRYPTO)
-                .toList();
-        List<Investment> stocksAndEtfs = autoUpdatable.stream()
-                .filter(i -> i.getType() != InvestmentType.CRYPTO)
-                .toList();
-
-        if (!cryptos.isEmpty()) {
-            refreshCryptoPrices(cryptos);
-        }
-        if (!stocksAndEtfs.isEmpty()) {
-            refreshStockPrices(stocksAndEtfs);
-        }
-
-        investmentRepository.saveAll(autoUpdatable);
-        log.info("Refreshed prices for {} investments.", autoUpdatable.size());
-    }
-
     public void refreshPricesForUser(User owner) {
         List<Investment> autoUpdatable = investmentRepository.findByOwnerAndTypeIn(
                 owner, List.of(InvestmentType.STOCK, InvestmentType.CRYPTO, InvestmentType.ETF)
@@ -103,7 +73,7 @@ public class PriceService {
         } catch (Exception e) {
             log.error("Failed to fetch USD to EUR exchange rate: {}", e.getMessage());
             if (usdToEurRate == null) {
-                usdToEurRate = 0.92; // Approximate fallback
+                usdToEurRate = 0.855; // Approximate fallback
                 log.warn("Using fallback USD to EUR rate: {}", usdToEurRate);
             }
         }
@@ -140,7 +110,7 @@ public class PriceService {
                     if (priceData != null && priceData.get("usd") != null) {
                         double priceUsd = ((Number) priceData.get("usd")).doubleValue();
 
-                        Double priceEur = priceUsd * (usdToEurRate != null ? usdToEurRate : 0.92);
+                        Double priceEur = priceUsd * (usdToEurRate != null ? usdToEurRate : 0.855);
                         crypto.setCurrentPrice(priceEur);
                         
                         log.debug("Updated {} price: ${} USD → €{}", crypto.getName(), priceUsd, priceEur);
