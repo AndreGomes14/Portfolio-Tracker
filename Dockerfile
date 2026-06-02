@@ -1,5 +1,5 @@
 # Multi-stage build: Build backend with Maven, run with Java
-FROM maven:3.9-eclipse-temurin-17 AS builder
+FROM maven:3.9-eclipse-temurin-21 AS builder
 
 WORKDIR /app
 
@@ -9,8 +9,8 @@ COPY . .
 # Build backend
 RUN mvn clean package -pl backend -DskipTests
 
-# Runtime: Use Java 17
-FROM eclipse-temurin:17-jre
+# Runtime: Use Java 21
+FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
