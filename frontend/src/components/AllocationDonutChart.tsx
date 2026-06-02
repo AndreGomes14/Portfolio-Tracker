@@ -141,7 +141,7 @@ export default function AllocationDonutChart({ investments, loading }: Props) {
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               padding: '12px',
             }}
-            formatter={(value: number, name: string, props: any) => {
+            formatter={(_value: number, _name: string, props: any) => {
               const data = props.payload as AllocationData;
               return [
                 <div key="tooltip" className="space-y-1">
@@ -160,7 +160,7 @@ export default function AllocationDonutChart({ investments, loading }: Props) {
             verticalAlign="bottom"
             height={36}
             iconType="circle"
-            formatter={(value: string, entry: any) => {
+            formatter={(_value: string, entry: any) => {
               const data = entry.payload as AllocationData;
               return `${TYPE_LABELS[data.type]} (${data.percentage.toFixed(1)}%)`;
             }}

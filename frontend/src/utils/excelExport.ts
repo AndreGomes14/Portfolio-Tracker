@@ -255,7 +255,7 @@ export function exportToExcel(
   XLSX.utils.book_append_sheet(workbook, groupedSheet, 'Investments Overview');
 
   // === ALL TRANSACTIONS (INDIVIDUAL BUYS) ===
-  const transactionsData = [
+  const transactionsData: (string | number)[][] = [
     [
       'ID',
       'Name',
