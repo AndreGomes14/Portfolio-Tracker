@@ -213,14 +213,14 @@ export default function PortfolioHistoryChart() {
                 borderRadius: '8px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               }}
-              formatter={(value: number | undefined, name: string) => {
+              formatter={((value: number | undefined, name: string | undefined) => {
                 const labels: Record<string, string> = {
                   portfolioValue: 'Total Portfolio Value',
                   currentValue: 'Current Value (excl. cash)',
                   invested: 'Total Invested',
                 };
-                return [formatCurrency(value || 0), labels[name] || name];
-              }}
+                return [formatCurrency(value || 0), labels[name || ''] || name || ''];
+              }) as any}
             />
             <Legend
               wrapperStyle={{ paddingTop: '20px' }}
