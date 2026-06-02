@@ -110,6 +110,9 @@ export default function Dashboard() {
           const oldValue = previous.currentValue;
           const newValue = updated.currentValue;
           const change = Math.round((newValue - oldValue) * 100) / 100;
+          const changePercent = oldValue === 0
+            ? 0
+            : Math.round(((newValue - oldValue) / oldValue) * 10000) / 100;
 
           if (change === 0) return null;
 
@@ -120,6 +123,7 @@ export default function Dashboard() {
             oldValue,
             newValue,
             change,
+            changePercent,
           };
         })
         .filter((item): item is PriceChange => item !== null)

@@ -73,7 +73,8 @@ function groupInvestments(investments: InvestmentResponse[]): GroupedInvestment[
     const first = invList[0];
     const totalQuantity = invList.reduce((sum, inv) => sum + inv.quantity, 0);
     const totalInvested = invList.reduce((sum, inv) => sum + inv.totalInvested, 0);
-    const totalCurrentValue = totalQuantity * first.currentPrice;
+    const totalCurrentValue = invList.reduce((sum, inv) => sum + inv.currentValue, 0);
+    const averageCurrentPrice = totalQuantity > 0 ? totalCurrentValue / totalQuantity : first.currentPrice;
     const totalProfitAndLoss = totalCurrentValue - totalInvested;
     const totalProfitAndLossPercentage = totalInvested > 0 ? (totalProfitAndLoss / totalInvested) * 100 : 0;
     const weightedAvgPrice = totalInvested / totalQuantity;
@@ -86,7 +87,7 @@ function groupInvestments(investments: InvestmentResponse[]): GroupedInvestment[
       investments: invList,
       totalQuantity,
       weightedAvgPrice,
-      currentPrice: first.currentPrice,
+      currentPrice: averageCurrentPrice,
       totalInvested,
       totalCurrentValue,
       totalProfitAndLoss,

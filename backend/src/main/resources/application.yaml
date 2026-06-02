@@ -4,9 +4,9 @@ spring:
 
   # PostgreSQL Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5433/portfolio_tracker
-    username: postgres
-    password: postgres
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/portfolio_tracker}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
 
   # JPA / Hibernate
@@ -38,7 +38,7 @@ springdoc:
 # This Base64-encoded key is a 256-bit HMAC key for development only.
 jwt:
   secret: ${JWT_SECRET:dGhpc0lzQVNlY3VyZURldmVsb3BtZW50S2V5Rm9yUG9ydGZvbGlvVHJhY2tlckFwcDIwMjY=}
-  expiration-ms: 86400000   # 24 hours
+  expiration-ms: 3600000 # 1 hour
 
 # Portfolio Tracker Config
 portfolio:

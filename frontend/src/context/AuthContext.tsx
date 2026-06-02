@@ -30,6 +30,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const TOKEN_KEY = 'pt_token';
 const USER_KEY = 'pt_user';
 
+// Helper function to decode JWT and extract expiration
+function decodeJwt(token: string): { exp?: number } | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const payload = JSON.parse(atob(parts[1]));
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
+// Check if token is expired
+function isTokenExpired(token: string): boolean {
+  const decoded = decodeJwt(token);
+  if (!decoded || !decoded.exp) return true;
+  
+  // Convert seconds to milliseconds and compare with current time
+  // Add 5-second buffer to avoid race conditions
+  return decoded.exp * 1000 <= Date.now() + 5000;
+}
+
 // --- Provider ---
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -48,14 +71,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const storedToken = localStorage.getItem(TOKEN_KEY);
     const storedUser = localStorage.getItem(USER_KEY);
-    if (storedToken && storedUser) {
+    
+    if (storedToken && storedUser && !isTokenExpired(storedToken)) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+    } else if (storedToken || storedUser) {
+      // Token is expired or missing user data, clear session
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      setToken(null);
+      setUser(null);
     }
+    
     setIsLoading(false);
   }, []);
 
   const persistSession = useCallback((tk: string, u: AuthUser) => {
+    // Don't persist expired tokens
+    if (isTokenExpired(tk)) {
+      setError('Token expired');
+      return;
+    }
+    
     localStorage.setItem(TOKEN_KEY, tk);
     localStorage.setItem(USER_KEY, JSON.stringify(u));
     setToken(tk);
@@ -68,7 +105,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
+    // Redirect to login page
+    window.location.href = '/';
   }, []);
+
+  // Periodically validate token expiration (every 5 minutes)
+  useEffect(() => {
+    if (!token) return;
+
+    const interval = setInterval(() => {
+      if (isTokenExpired(token)) {
+        clearSession();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [token, clearSession]);
 
   const login = useCallback(
     (data: LoginRequest) => {

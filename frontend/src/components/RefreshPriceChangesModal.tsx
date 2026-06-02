@@ -5,6 +5,17 @@ type PriceChange = {
   oldValue: number;
   newValue: number;
   change: number;
+  changePercent: number;
+};
+
+type GroupedPriceChange = {
+  ticker: string | null;
+  name: string;
+  oldValue: number;
+  newValue: number;
+  change: number;
+  changePercent: number;
+  count: number;
 };
 
 interface RefreshPriceChangesModalProps {
@@ -17,6 +28,41 @@ interface RefreshPriceChangesModalProps {
 
 export type { PriceChange };
 
+function groupPriceChanges(changes: PriceChange[]): GroupedPriceChange[] {
+  const groups = new Map<string, PriceChange[]>();
+
+  // Group by ticker if available, otherwise by name
+  changes.forEach((change) => {
+    const key = change.ticker ? `${change.ticker.toLowerCase()}` : `name-${change.name.toLowerCase()}`;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key)!.push(change);
+  });
+
+  // Calculate aggregates for each group
+  const result: GroupedPriceChange[] = [];
+  groups.forEach((changeList, _key) => {
+    const first = changeList[0];
+    const totalOldValue = changeList.reduce((sum, c) => sum + c.oldValue, 0);
+    const totalNewValue = changeList.reduce((sum, c) => sum + c.newValue, 0);
+    const totalChange = totalNewValue - totalOldValue;
+    const totalChangePercent = totalOldValue > 0 ? (totalChange / totalOldValue) * 100 : 0;
+
+    result.push({
+      ticker: first.ticker,
+      name: first.name,
+      oldValue: totalOldValue,
+      newValue: totalNewValue,
+      change: totalChange,
+      changePercent: totalChangePercent,
+      count: changeList.length,
+    });
+  });
+
+  return result;
+}
+
 export default function RefreshPriceChangesModal({
   open,
   changes,
@@ -27,7 +73,12 @@ export default function RefreshPriceChangesModal({
   if (!open) return null;
 
   const totalChange = Math.round((newPortfolioValue - oldPortfolioValue) * 100) / 100;
+  const totalPercentChange = oldPortfolioValue === 0
+    ? 0
+    : Math.round(((newPortfolioValue - oldPortfolioValue) / oldPortfolioValue) * 10000) / 100;
   const totalChangeClass = totalChange > 0 ? 'text-emerald-600' : 'text-rose-600';
+
+  const groupedChanges = groupPriceChanges(changes);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -76,23 +127,34 @@ export default function RefreshPriceChangesModal({
                     maximumFractionDigits: 2,
                   })}
                 </p>
+                <p className={`mt-1 text-sm font-medium ${totalChangeClass}`}>
+                  {totalPercentChange > 0 ? '+' : ''}{totalPercentChange.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}%
+                </p>
               </div>
             </div>
             <div className="mt-5 space-y-3">
-              {changes.length === 0 ? (
+              {groupedChanges.length === 0 ? (
                 <div className="rounded-xl border border-gray-200 p-6 bg-gray-50 text-center text-sm text-gray-700">
                   No asset values changed during this refresh.
                 </div>
               ) : (
-                changes.map((change) => (
+                groupedChanges.map((change) => (
                   <div
-                    key={change.id}
+                    key={change.ticker || change.name}
                     className="rounded-xl border border-gray-200 p-4 bg-gray-50"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{change.name}</p>
-                        {change.ticker && <p className="text-xs text-gray-500">{change.ticker}</p>}
+                        <div className="flex items-center gap-2 mt-1">
+                          {change.ticker && <p className="text-xs text-gray-500">{change.ticker}</p>}
+                          {change.count > 1 && (
+                            <p className="text-xs text-gray-400 italic">({change.count} positions merged)</p>
+                          )}
+                        </div>
                       </div>
                       <span
                         className={`text-sm font-semibold ${change.change > 0 ? 'text-emerald-600' : 'text-rose-600'}`}
@@ -101,6 +163,13 @@ export default function RefreshPriceChangesModal({
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
+                        {' '}
+                        <span className="text-xs font-medium">
+                          ({change.changePercent > 0 ? '+' : ''}{Math.abs(change.changePercent).toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}%)
+                        </span>
                       </span>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-4 text-sm text-gray-700">

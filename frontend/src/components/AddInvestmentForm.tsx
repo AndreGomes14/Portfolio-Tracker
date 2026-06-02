@@ -79,7 +79,13 @@ export default function AddInvestmentForm({ onSubmit, onCancel, editingInvestmen
     try {
       const quantityNum = parseFloat(form.quantity);
       const averagePurchasePriceNum = parseFloat(form.averagePurchasePrice);
-      const currentPriceNum = form.currentPrice.trim() === '' ? undefined : parseFloat(form.currentPrice);
+      const normalizedCurrentPrice = form.currentPrice.trim();
+      const currentPriceString = normalizedCurrentPrice.includes(',') && !normalizedCurrentPrice.includes('.')
+        ? normalizedCurrentPrice.replace(/,/g, '.')
+        : normalizedCurrentPrice.includes(',') && normalizedCurrentPrice.includes('.')
+          ? normalizedCurrentPrice.replace(/,/g, '')
+          : normalizedCurrentPrice;
+      const currentPriceNum = currentPriceString === '' ? undefined : parseFloat(currentPriceString);
 
       const payload: InvestmentRequest = {
         name: form.name,
@@ -227,9 +233,9 @@ export default function AddInvestmentForm({ onSubmit, onCancel, editingInvestmen
               name="currentPrice"
               value={form.currentPrice}
               onChange={handleChange}
-              min="0.01"
-              step="0.01"
-              placeholder={isManualType ? '0.01' : 'Auto-fetched'}
+              min="0.00000001"
+              step="0.00000001"
+              placeholder={isManualType ? '0.00000001' : 'Auto-fetched'}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
             />
             {!isManualType && (
