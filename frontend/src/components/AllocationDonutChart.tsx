@@ -141,7 +141,7 @@ export default function AllocationDonutChart({ investments, loading }: Props) {
               boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
               padding: '12px',
             }}
-            formatter={((_, __, props: any) => {
+            formatter={((_: any, __: any, props: any) => {
               const data = props.payload as AllocationData;
               return [
                 <div key="tooltip" className="space-y-1">
