@@ -163,7 +163,20 @@ public class PriceService {
             if (meta == null) return null;
 
             Object price = meta.get("regularMarketPrice");
-            return price != null ? ((Number) price).doubleValue() : null;
+            if (price == null) return null;
+
+            double rawPrice = ((Number) price).doubleValue();
+
+            // If Yahoo reports the price in USD, convert to EUR using fetched rate
+            Object currencyObj = meta.get("currency");
+            if (currencyObj != null && "USD".equalsIgnoreCase(currencyObj.toString())) {
+                double rate = usdToEurRate != null ? usdToEurRate : 0.855;
+                double priceEur = rawPrice * rate;
+                log.debug("Converted Yahoo price from ${} USD to €{} (rate={})", rawPrice, priceEur, rate);
+                return priceEur;
+            }
+
+            return rawPrice;
         } catch (Exception e) {
             log.error("Error parsing Yahoo Finance response: {}", e.getMessage());
             return null;
